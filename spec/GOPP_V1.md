@@ -302,7 +302,7 @@ source_id 不在 Body 中重复。URI 中的 source_id 是唯一权威身份；w
 | revision | non-negative integer | 否 | 可选上游版本号，见第 11 节 |
 | extensions | object | 否 | 受治理的命名空间扩展 |
 
-v1 的 Body 必填字段只有 title、content.format、content.body；资源身份 source_id 必须存在于 URI。Receiver 不得因为缺少可选字段而拒绝一个有效的 v1 请求，但可以拒绝明确发送且不支持的可选能力。
+v1 的 Body 必填字段只有 title、content.format、content.body；资源身份 source_id 必须存在于 URI。Receiver 不得因为缺少可选字段而拒绝一个有效的 v1 请求，但可以拒绝明确发送且不支持的可选能力。`content_type`、`summary`、`author`、`source_url`、`locale`、`published_at` 等没有独立 capability flag 的 optional core fields，只要通过语法和语义校验，Receiver MUST 接受请求；Receiver 可以使用、忽略或附加 warning，但不得仅因内部 CMS/Backend 没有对应字段而拒绝整个 content request。v1 不为这些字段新增 capability flag。
 
 ### 8.3 media
 

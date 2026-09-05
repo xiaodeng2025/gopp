@@ -821,6 +821,9 @@ function normalizeBaseUrl(
   if (policy.allowedHosts?.has(host) === false) {
     throw new GoppTransportSecurityError("blocked_target");
   }
+  if (parsed.protocol === "http:" && !isLoopbackHost(host)) {
+    throw new GoppTransportSecurityError("blocked_target");
+  }
   if (!policy.allowPrivateNetwork && (isBlockedHostname(host) || isBlockedIpAddress(host)) &&
     !( !policy.requireHttps && isLoopbackHost(host))) {
     throw new GoppTransportSecurityError("blocked_target");

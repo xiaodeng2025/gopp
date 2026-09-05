@@ -152,6 +152,23 @@ describe("GOPP Publisher transport security", () => {
     );
   });
 
+  it("rejects public and private HTTP even when HTTPS is relaxed for tests", () => {
+    for (const baseUrl of ["http://example.com", "http://10.0.0.1"]) {
+      assertSecurityError(
+        () => new GoppClient({
+          baseUrl,
+          token,
+          transportSecurity: { requireHttps: false },
+        }),
+        "blocked_target",
+      );
+    }
+  });
+
+  it("allows a public HTTPS target under the normal production policy", () => {
+    expect(() => new GoppClient({ baseUrl: "https://example.com", token })).not.toThrow();
+  });
+
   it("does not follow redirects or transfer the bearer token", async () => {
     let redirectedRequests = 0;
     let redirectedAuthorization: string | undefined;

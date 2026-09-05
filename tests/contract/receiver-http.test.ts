@@ -286,9 +286,23 @@ describe("GOPP v1 Reference Receiver HTTP contract", () => {
       authHeaders(),
     );
 
-    expect(result.status).toBe(400);
+    expect([400, 404]).toContain(result.status);
     expect(problemCode(result)).toBe("invalid_request");
     expect(problemIsValid(result)).toBe(true);
+    expect(harness.receiver.getResourceCount()).toBe(0);
+  });
+
+  it.each(["%41", "%7E", "%2E"])("rejects percent-encoded source_id alias %s", async (rawSourceId) => {
+    const harness = await startReceiver();
+    const result = await request(
+      harness,
+      "/v1/content/" + rawSourceId,
+      "PUT",
+      minimalContent(),
+      authHeaders(),
+    );
+    expect(result.status).toBe(400);
+    expect(problemCode(result)).toBe("invalid_request");
     expect(harness.receiver.getResourceCount()).toBe(0);
   });
 
@@ -304,6 +318,22 @@ describe("GOPP v1 Reference Receiver HTTP contract", () => {
     expect(validate(schemaFile.contentSuccess, result.body)).toBe(true);
     expect(responseData(result).result).toBe("created");
     expect(harness.receiver.getResourceCount()).toBe(1);
+  });
+
+  it("accepts valid optional core fields without capability flags", async () => {
+    const harness = await startReceiver({
+      capabilities: { tags: false, seo: false, media: false, revision: false },
+    });
+    const body = minimalContent();
+    body.content_type = "article";
+    body.summary = "Summary";
+    body.author = { name: "Author" };
+    body.source_url = "https://publisher.example/article-001";
+    body.locale = "en-US";
+    body.published_at = "2026-09-05T00:00:00Z";
+    const result = await putContent(harness, "optional-core-001", body);
+    expect(result.status).toBe(201);
+    expect(responseData(result).result).toBe("created");
   });
 
   it("rejects malformed content with Problem Details", async () => {

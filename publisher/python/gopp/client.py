@@ -24,6 +24,12 @@ from .errors import (
 )
 
 SOURCE_ID_PATTERN = re.compile(r"^(?!\.\.?$)[A-Za-z0-9._~-]{1,128}$")
+EXTENSION_NAMESPACE_PATTERN = re.compile(r"^(https://|[a-z][a-z0-9+.-]*\.)")
+PROBLEM_CODES = {
+    "authentication_failed", "unsupported_protocol_version", "invalid_request",
+    "invalid_content", "unsupported_content_format", "channel_not_found",
+    "resource_conflict", "rate_limited", "internal_error",
+}
 
 
 def credential_from_env(name: str) -> str:
@@ -43,6 +49,7 @@ class GoppClient:
         if not token:
             raise GoppError("GOPP credential is unavailable.")
         self.base_url = base_url.rstrip("/")
+        self.scheme = parsed.scheme
         self.host = parsed.hostname
         self.port = parsed.port or (443 if parsed.scheme == "https" else 80)
         self.token = token
@@ -58,8 +65,10 @@ class GoppClient:
             raise GoppSecurityError("GOPP target DNS lookup failed.") from exc
         if not addresses:
             raise GoppSecurityError("GOPP target has no address.")
-        if self.allow_loopback and all(ipaddress.ip_address(value).is_loopback for value in addresses):
-            return
+        if self.allow_loopback and self.scheme == "http":
+            if all(ipaddress.ip_address(value).is_loopback for value in addresses):
+                return
+            raise GoppSecurityError("GOPP HTTP test targets must be loopback.")
         for value in addresses:
             try:
                 address = ipaddress.ip_address(value)
@@ -83,13 +92,16 @@ class GoppClient:
             data = response.json()
         except ValueError as exc:
             raise GoppProtocolError("GOPP response was not JSON.") from exc
-        if response.status_code == 401:
-            raise GoppAuthenticationError("GOPP authentication failed.")
-        if response.status_code >= 400:
+        if response.status_code < 200 or response.status_code >= 300:
             if not isinstance(data, dict) or data.get("status") != response.status_code:
                 raise GoppProtocolError("GOPP Problem Details status is invalid.")
-            required = ("type", "title", "code", "request_id", "retryable")
-            if any(not data.get(field) for field in required):
+            if (
+                not isinstance(data.get("type"), str) or not data["type"]
+                or not isinstance(data.get("title"), str) or not data["title"]
+                or not isinstance(data.get("code"), str) or data["code"] not in PROBLEM_CODES
+                or not isinstance(data.get("request_id"), str) or not data["request_id"]
+                or not isinstance(data.get("retryable"), bool)
+            ):
                 raise GoppProtocolError("GOPP Problem Details is incomplete.")
             problem = GoppProblem(
                 code=str(data.get("code", "remote_error")) if isinstance(data, dict) else "remote_error",
@@ -100,6 +112,8 @@ class GoppClient:
                 retryable=data.get("retryable") if isinstance(data, dict) else None,
                 field_errors=data.get("field_errors") if isinstance(data, dict) else None,
             )
+            if response.status_code == 401 and problem.code == "authentication_failed":
+                raise GoppAuthenticationError("GOPP authentication failed.", request_id=problem.request_id, problem=problem)
             raise GoppProtocolError("GOPP Receiver rejected the request.", request_id=problem.request_id, problem=problem)
         if (
             not isinstance(data, dict)
@@ -116,6 +130,23 @@ class GoppClient:
         if self._verified is not None:
             return self._verified
         data = self._request("POST", "/v1/verify", {})
+        verify_data = data.get("data")
+        capabilities = verify_data.get("capabilities") if isinstance(verify_data, dict) else None
+        site = verify_data.get("site") if isinstance(verify_data, dict) else None
+        required = ("content_formats", "statuses", "upsert", "channels", "tags", "seo", "media", "revision", "extensions")
+        if not isinstance(site, dict) or not isinstance(capabilities, dict) or any(field not in capabilities for field in required):
+            raise GoppProtocolError("GOPP verify capabilities are incomplete.")
+        if (
+            capabilities["upsert"] is not True
+            or not isinstance(capabilities["content_formats"], list) or "html" not in capabilities["content_formats"]
+            or not isinstance(capabilities["statuses"], list) or "draft" not in capabilities["statuses"]
+            or any(value not in {"draft", "published"} for value in capabilities["statuses"])
+            or any(not isinstance(value, str) for value in capabilities["content_formats"])
+            or any(not isinstance(capabilities[field], bool) for field in ("channels", "tags", "seo", "media", "revision"))
+            or not isinstance(capabilities["extensions"], list)
+            or any(not isinstance(value, str) or EXTENSION_NAMESPACE_PATTERN.fullmatch(value) is None for value in capabilities["extensions"])
+        ):
+            raise GoppProtocolError("GOPP verify capabilities are invalid.")
         self._verified = data
         return data
 
@@ -130,15 +161,15 @@ class GoppClient:
         if not isinstance(source_id, str) or SOURCE_ID_PATTERN.fullmatch(source_id) is None:
             raise GoppError("source_id is invalid.")
         verified = self.verify()
-        capabilities = verified.get("data", {}).get("capabilities", {})
+        capabilities = verified["data"]["capabilities"]
         if isinstance(content.get("content"), dict):
             content_format = content["content"].get("format")
-            if isinstance(capabilities, dict) and content_format not in capabilities.get("content_formats", ["html"]):
+            if content_format not in capabilities["content_formats"]:
                 raise GoppError("The Receiver does not support the requested content format.")
-        if content.get("status") == "published" and isinstance(capabilities, dict) and "published" not in capabilities.get("statuses", ["draft", "published"]):
+        if content.get("status") == "published" and "published" not in capabilities["statuses"]:
             raise GoppError("The Receiver does not support published content.")
         for field, capability in (("tags", "tags"), ("seo", "seo"), ("media", "media"), ("revision", "revision"), ("channel", "channels")):
-            if field in content and isinstance(capabilities, dict) and capabilities.get(capability, True) is False:
+            if field in content and capabilities[capability] is False:
                 raise GoppError(f"The Receiver does not support {field}.")
         data = self._request("PUT", "/v1/content/" + quote(source_id, safe=""), content)
         result = data["data"].get("result")

@@ -633,31 +633,14 @@ export class ReferenceReceiver {
   private decodeSourceId(pathname: string): string {
     const prefix = "/v1/content/";
     const rawSourceId = pathname.slice(prefix.length);
-    if (!rawSourceId || rawSourceId.includes("/")) {
+    if (!sourceIdPattern.test(rawSourceId)) {
       throw new ReceiverError(
         400,
         "invalid_request",
-        "source_id must be one non-empty URI path segment.",
+        "source_id must use the GOPP wire grammar without percent encoding.",
       );
     }
-    let sourceId: string;
-    try {
-      sourceId = decodeURIComponent(rawSourceId);
-    } catch {
-      throw new ReceiverError(
-        400,
-        "invalid_request",
-        "source_id is not valid URI-encoded text.",
-      );
-    }
-    if (!sourceIdPattern.test(sourceId)) {
-      throw new ReceiverError(
-        400,
-        "invalid_request",
-        "source_id does not satisfy the GOPP wire grammar.",
-      );
-    }
-    return sourceId;
+    return rawSourceId;
   }
 
   private validateContent(body: unknown): JsonRecord {

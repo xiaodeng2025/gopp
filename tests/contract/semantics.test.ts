@@ -92,6 +92,9 @@ describe("GOPP v1 frozen semantics", () => {
     verify.data.capabilities.future_capability = true;
     verify.data.site.future_display_name = "test";
     expect(validate(schemaFile.verifySuccess, verify)).toBe(true);
+    const channels = loadExample("valid", "channels-success.json") as { data: { channels: unknown[]; [key: string]: unknown } };
+    channels.data.future_metadata = { source: "test" };
+    expect(validate(schemaFile.channelsSuccess, channels)).toBe(true);
     expect(validate(schemaFile.problemDetails, {
       ...(loadExample("valid", "problem-invalid-content.json") as Record<string, unknown>),
       future_extension: "ignored",
