@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { isIP } from "node:net";
 import { fileURLToPath } from "node:url";
 import { Ajv2020, type ValidateFunction } from "ajv/dist/2020.js";
 import addFormatsModule from "ajv-formats";
@@ -104,7 +105,16 @@ function normalizeBaseUrl(value: string): string {
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     throw new Error("base URL must use HTTP or HTTPS.");
   }
+  if (parsed.protocol === "http:" && !isLoopbackTarget(parsed.hostname)) {
+    throw new Error("Conformance HTTP targets must be loopback; use HTTPS for other targets.");
+  }
   return value.replace(/\/+$/, "");
+}
+
+function isLoopbackTarget(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (host === "localhost" || host === "::1") return true;
+  return isIP(host) === 4 && host.split(".")[0] === "127";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -211,6 +221,7 @@ async function request(
     method,
     headers,
     signal: AbortSignal.timeout(requestTimeoutMs),
+    redirect: "manual",
   };
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";

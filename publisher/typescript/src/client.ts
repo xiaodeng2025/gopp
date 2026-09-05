@@ -22,6 +22,7 @@ const defaultTimeoutMs = 10_000;
 const defaultMaxRetries = 2;
 const jsonContentType = "application/json";
 const problemContentType = "application/problem+json";
+const sourceIdPattern = /^(?!\.\.?$)[A-Za-z0-9._~-]{1,128}$/;
 
 export type ProtocolStatus = "draft" | "published";
 export type ContentResultValue = "created" | "updated" | "unchanged";
@@ -223,7 +224,7 @@ export interface TransportSecurityOptions {
 
 export const LOCAL_TEST_TRANSPORT_SECURITY = {
   requireHttps: false,
-  allowPrivateNetwork: true,
+  allowPrivateNetwork: false,
 } as const;
 
 export interface VerifyOptions {
@@ -560,8 +561,7 @@ export class GoppClient {
   ): Promise<ContentResult> {
     if (
       typeof sourceId !== "string" ||
-      sourceId.length === 0 ||
-      /[\u0000-\u001f\u007f\r\n]/.test(sourceId)
+      !sourceIdPattern.test(sourceId)
     ) {
       throw new LocalValidationError("invalid_source_id");
     }
@@ -745,6 +745,9 @@ export class GoppClient {
         if (!validProblem) {
           throw invalidResponse(options.requestId, "invalid error response");
         }
+        if (isRecord(parsedBody.value) && parsedBody.value.status !== response.status) {
+          throw invalidResponse(options.requestId, "Problem Details status mismatch");
+        }
         throw new GoppProtocolError(
           safeProblem(parsedBody.value as GoppProblem, this.token),
         );
@@ -768,6 +771,7 @@ export class GoppClient {
       throw new GoppTransportSecurityError("blocked_target", requestIdValue);
     }
     if (!this.transportSecurity.allowPrivateNetwork &&
+      !(!this.transportSecurity.requireHttps && isLoopbackHost(this.targetHost)) &&
       (isBlockedHostname(this.targetHost) || isBlockedIpAddress(this.targetHost))) {
       throw new GoppTransportSecurityError("blocked_target", requestIdValue);
     }
@@ -781,6 +785,7 @@ export class GoppClient {
       throw new TransportError(requestIdValue);
     }
     if (addresses.length === 0 || (!this.transportSecurity.allowPrivateNetwork &&
+      !( !this.transportSecurity.requireHttps && addresses.every((item) => isLoopbackIp(item.address))) &&
       addresses.some((item) => isBlockedIpAddress(item.address)))) {
       throw new GoppTransportSecurityError("blocked_target", requestIdValue);
     }
@@ -816,7 +821,8 @@ function normalizeBaseUrl(
   if (policy.allowedHosts?.has(host) === false) {
     throw new GoppTransportSecurityError("blocked_target");
   }
-  if (!policy.allowPrivateNetwork && (isBlockedHostname(host) || isBlockedIpAddress(host))) {
+  if (!policy.allowPrivateNetwork && (isBlockedHostname(host) || isBlockedIpAddress(host)) &&
+    !( !policy.requireHttps && isLoopbackHost(host))) {
     throw new GoppTransportSecurityError("blocked_target");
   }
   return { baseUrl: parsed.href.replace(/\/+$/, ""), host };
@@ -829,8 +835,8 @@ function normalizeTransportSecurity(
     throw new LocalValidationError("invalid_client_options");
   }
   const requireHttps = options?.requireHttps ?? true;
-  const allowPrivateNetwork = options?.allowPrivateNetwork ?? false;
-  if (typeof requireHttps !== "boolean" || typeof allowPrivateNetwork !== "boolean") {
+  const requestedPrivateNetwork = options?.allowPrivateNetwork ?? false;
+  if (typeof requireHttps !== "boolean" || typeof requestedPrivateNetwork !== "boolean") {
     throw new LocalValidationError("invalid_client_options");
   }
   let allowedHosts: ReadonlySet<string> | undefined;
@@ -850,7 +856,8 @@ function normalizeTransportSecurity(
     });
     allowedHosts = new Set(normalized);
   }
-  return { requireHttps, allowPrivateNetwork, allowedHosts };
+  // Kept for source compatibility; no option may broaden the target boundary.
+  return { requireHttps, allowPrivateNetwork: false, allowedHosts };
 }
 
 function normalizeHostname(value: string): string {
@@ -872,6 +879,16 @@ function isValidHostname(host: string): boolean {
 
 function isBlockedHostname(host: string): boolean {
   return host === "localhost" || host.endsWith(".localhost");
+}
+
+function isLoopbackIp(address: string): boolean {
+  const family = isIP(address);
+  return family === 4 ? address.split(".")[0] === "127" :
+    family === 6 && (address === "::1" || address.toLowerCase().startsWith("::ffff:127."));
+}
+
+function isLoopbackHost(host: string): boolean {
+  return host === "localhost" || isLoopbackIp(host);
 }
 
 function isBlockedIpAddress(address: string): boolean {

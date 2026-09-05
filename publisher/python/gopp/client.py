@@ -8,6 +8,7 @@ from __future__ import annotations
 import ipaddress
 import os
 import socket
+import re
 from typing import Any
 from urllib.parse import quote, urlparse
 
@@ -21,6 +22,8 @@ from .errors import (
     GoppSecurityError,
     GoppTransportError,
 )
+
+SOURCE_ID_PATTERN = re.compile(r"^(?!\.\.?$)[A-Za-z0-9._~-]{1,128}$")
 
 
 def credential_from_env(name: str) -> str:
@@ -45,6 +48,7 @@ class GoppClient:
         self.token = token
         self.timeout = min(max(float(timeout), 0.1), 30.0)
         self.allow_loopback = allow_loopback
+        self._verified: dict[str, Any] | None = None
         self._check_target()
 
     def _check_target(self) -> None:
@@ -82,6 +86,11 @@ class GoppClient:
         if response.status_code == 401:
             raise GoppAuthenticationError("GOPP authentication failed.")
         if response.status_code >= 400:
+            if not isinstance(data, dict) or data.get("status") != response.status_code:
+                raise GoppProtocolError("GOPP Problem Details status is invalid.")
+            required = ("type", "title", "code", "request_id", "retryable")
+            if any(not data.get(field) for field in required):
+                raise GoppProtocolError("GOPP Problem Details is incomplete.")
             problem = GoppProblem(
                 code=str(data.get("code", "remote_error")) if isinstance(data, dict) else "remote_error",
                 status=response.status_code,
@@ -92,12 +101,23 @@ class GoppClient:
                 field_errors=data.get("field_errors") if isinstance(data, dict) else None,
             )
             raise GoppProtocolError("GOPP Receiver rejected the request.", request_id=problem.request_id, problem=problem)
-        if not isinstance(data, dict) or data.get("protocol") != "GOPP" or data.get("protocol_version") != "1.0" or not isinstance(data.get("data"), dict):
+        if (
+            not isinstance(data, dict)
+            or data.get("protocol") != "GOPP"
+            or data.get("protocol_version") != "1.0"
+            or not isinstance(data.get("request_id"), str)
+            or not data.get("request_id")
+            or not isinstance(data.get("data"), dict)
+        ):
             raise GoppProtocolError("GOPP response envelope is invalid.")
         return data
 
     def verify(self) -> dict[str, Any]:
-        return self._request("POST", "/v1/verify", {})
+        if self._verified is not None:
+            return self._verified
+        data = self._request("POST", "/v1/verify", {})
+        self._verified = data
+        return data
 
     def channels(self) -> list[dict[str, Any]]:
         data = self._request("GET", "/v1/channels")
@@ -107,8 +127,19 @@ class GoppClient:
         return channels
 
     def put_content(self, source_id: str, content: dict[str, Any]) -> dict[str, Any]:
-        if not source_id or any(ord(char) < 32 or ord(char) == 127 for char in source_id):
+        if not isinstance(source_id, str) or SOURCE_ID_PATTERN.fullmatch(source_id) is None:
             raise GoppError("source_id is invalid.")
+        verified = self.verify()
+        capabilities = verified.get("data", {}).get("capabilities", {})
+        if isinstance(content.get("content"), dict):
+            content_format = content["content"].get("format")
+            if isinstance(capabilities, dict) and content_format not in capabilities.get("content_formats", ["html"]):
+                raise GoppError("The Receiver does not support the requested content format.")
+        if content.get("status") == "published" and isinstance(capabilities, dict) and "published" not in capabilities.get("statuses", ["draft", "published"]):
+            raise GoppError("The Receiver does not support published content.")
+        for field, capability in (("tags", "tags"), ("seo", "seo"), ("media", "media"), ("revision", "revision"), ("channel", "channels")):
+            if field in content and isinstance(capabilities, dict) and capabilities.get(capability, True) is False:
+                raise GoppError(f"The Receiver does not support {field}.")
         data = self._request("PUT", "/v1/content/" + quote(source_id, safe=""), content)
         result = data["data"].get("result")
         if result not in {"created", "updated", "unchanged"}:
