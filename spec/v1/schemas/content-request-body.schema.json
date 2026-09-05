@@ -127,7 +127,10 @@
       "additionalProperties": true
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": true,
+  "not": {
+    "required": ["source_id"]
+  },
   "$defs": {
     "http_url": {
       "type": "string",

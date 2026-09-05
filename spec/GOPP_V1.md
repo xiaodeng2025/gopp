@@ -98,6 +98,7 @@ verify、channels、content 的成功响应使用统一外层：
 - verify 成功响应必须返回 GOPP 和 1.0；其他成功响应也应回显。
 - 同一主版本后续只能增加可选字段、能力或受治理扩展，不得改变 v1 必填字段语义。
 - Receiver 遇到未认识的可选字段，可以忽略并在 warnings 中报告；不得自动把未知字段持久化为内部字段。
+- Content request 顶层、capabilities、site、channel item、各成功响应的 data 对象，以及 Problem Details 顶层允许增加未知可选成员；Receiver/Publisher MUST NOT 仅因不认识这些成员而失败。content、request channel reference、media、media item、author、seo、field_errors item 和统一成功 envelope 顶层仍保持严格闭合。
 - 未认识的 extension 可以忽略，不得覆盖核心字段语义。
 - Publisher 依赖可选能力前必须先读取 capabilities。
 - 不支持的主版本必须返回 unsupported_protocol_version，不得静默降级或猜测字段含义。
@@ -277,7 +278,7 @@ Content-Type: application/json
 }
 ~~~
 
-source_id 不在 Body 中重复。URI 中的 source_id 是唯一权威身份；如果使用 URL percent-encoding，解码后的值仍必须对应同一个不透明 source_id。协议不规定 source_id 的生成算法、UUID/哈希格式或是否包含任何内部标识。
+source_id 不在 Body 中重复。URI 中的 source_id 是唯一权威身份；wire representation 必须是 1–128 个 ASCII URL unreserved 字符（`A-Z a-z 0-9 - . _ ~`），且完整值不得为 `.` 或 `..`。禁止 `/`、反斜杠、`%`、空白、控制字符、Unicode 以及依赖 URL decode 的 percent-encoded 表示。协议不规定 source_id 的生成算法、UUID/哈希格式或是否包含任何内部标识；上游内部 identity 可以是任意格式，Adapter/Publisher 负责稳定映射。
 
 ### 8.2 Body 字段
 
@@ -286,7 +287,7 @@ source_id 不在 Body 中重复。URI 中的 source_id 是唯一权威身份；�
 | title | string | 是 | 非空内容标题 |
 | content | object | 是 | 正文容器 |
 | content.format | string | 是 | v1 标准格式为 html |
-| content.body | string | 是 | 与 format 对应的正文内容 |
+| content.body | string | 是 | 与 format 对应的非空正文内容；必须是 non-empty string |
 | content_type | string | 否 | 泛化类型提示；v1 不规定行业枚举 |
 | summary | string | 否 | 内容摘要；协议不要求自动截取 |
 | media | object | 否 | cover 和 images，见 8.3 |
@@ -385,7 +386,7 @@ extensions 只允许命名空间对象，例如：
 
 规则：
 
-- 扩展必须有稳定命名空间、公开文档、版本和字段语义。
+- 扩展必须有稳定命名空间、公开文档、版本和字段语义。`capabilities.extensions` 与 request `extensions` 对象 key 使用同一 namespace 语法；它表示 Receiver 明确认识并支持处理的 namespace。Publisher 若业务逻辑依赖 Receiver 执行某扩展语义，必须先确认该 namespace 已在 capabilities 中声明；未知扩展必须可安全忽略。
 - 未知扩展不得导致核心请求失败；Receiver 可以安全忽略。
 - 扩展不得覆盖或改变核心字段语义。
 - 不允许把 GEO 内部数据库字段、tenant_id、密钥、个人隐私或内部路径整体塞进 extensions。
@@ -422,6 +423,8 @@ verify 返回 Receiver 的实际能力：
 | media | boolean | 是否接受标准 media 对象 |
 | revision | boolean | 是否按 v1 revision 规则做乱序/冲突判断 |
 | extensions | string[] | 支持的扩展命名空间/标识 |
+
+认证 scope 指 Receiver 识别的稳定逻辑授权主体/发布关系。同一逻辑 identity scope 下仅轮换 Bearer credential，不得使原有 source_id 重新变成 created；协议不规定 Receiver 的内部授权数据库，也不新增 publisher_id 或 tenant 字段。
 
 v1 使用 seo 和 media 的布尔能力表达“标准对象整体可接受”。Receiver 如果只支持其中部分子字段，应在接收时通过 warnings 说明；未来如确有需要，再设计字段级能力扩展。GOPP v1 Receiver 必须支持 draft，capabilities.statuses 必须包含 draft；只声明 [published] 的 Receiver 不符合 GOPP v1。published 是可选能力。
 
@@ -636,6 +639,7 @@ Receiver 必须按照自己的 CMS、安全模型和运行环境做 HTML sanitiz
 - source_id 不能直接作为 SQL、文件路径或命令片段。
 - extensions 不能成为内部数据库字段、租户数据或敏感配置外泄通道。
 - 限流、IP 白名单、审计、最小数据库权限和 Token 轮换属于部署建议，不改变协议核心。
+- Publisher 的显式本地测试绕过只允许 loopback（如 `127.0.0.1`、`::1`）使用 HTTP；不得借此放行任意私网、LAN、metadata 或公网 HTTP。DNS resolve pre-check 是 target validation 与 SSRF 风险降低的 defense-in-depth，不等于完整 connection-level DNS pinning。
 
 ## 17. v1 一致性清单
 

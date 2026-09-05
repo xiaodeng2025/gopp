@@ -79,6 +79,35 @@ describe("GOPP v1 frozen semantics", () => {
     expect(validate(schemaFile.contentRequestBody, numericChannel)).toBe(false);
   });
 
+  it("accepts additive members only at open evolution points", () => {
+    const minimal = loadExample("valid", "content-minimal.json") as ContentBody;
+    const request = { ...minimal, future_hint: true };
+    expect(validate(schemaFile.contentRequestBody, request)).toBe(true);
+
+    const response = loadExample("valid", "content-created.json") as Record<string, any>;
+    response.data.future_result_metadata = { source: "test" };
+    expect(validate(schemaFile.contentSuccess, response)).toBe(true);
+
+    const verify = loadExample("valid", "verify-success.json") as { data: { capabilities: Record<string, unknown>; site: Record<string, unknown> } };
+    verify.data.capabilities.future_capability = true;
+    verify.data.site.future_display_name = "test";
+    expect(validate(schemaFile.verifySuccess, verify)).toBe(true);
+    expect(validate(schemaFile.problemDetails, {
+      ...(loadExample("valid", "problem-invalid-content.json") as Record<string, unknown>),
+      future_extension: "ignored",
+    })).toBe(true);
+  });
+
+  it("keeps known nested structures strict and content.body non-empty", () => {
+    const minimal = loadExample("valid", "content-minimal.json") as ContentBody;
+    const emptyBody = clone(minimal);
+    emptyBody.content = { ...(emptyBody.content ?? {}), body: "" };
+    expect(validate(schemaFile.contentRequestBody, emptyBody)).toBe(false);
+    const nestedUnknown = clone(minimal);
+    nestedUnknown.content = { ...(nestedUnknown.content ?? {}), future: true };
+    expect(validate(schemaFile.contentRequestBody, nestedUnknown)).toBe(false);
+  });
+
   it("accepts every frozen content result and separates warnings from errors", () => {
     for (const fileName of [
       "content-created.json",

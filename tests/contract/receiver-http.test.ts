@@ -238,15 +238,43 @@ describe("GOPP v1 Reference Receiver HTTP contract", () => {
     expect(responseData(created).remote_id).toBe(responseData(updated).remote_id);
   });
 
-  it("decodes source_id from the URI and persists omitted status as draft", async () => {
+  it("atomically upserts concurrent identical PUTs", async () => {
     const harness = await startReceiver();
-    const result = await putContent(harness, "opaque source", minimalContent());
-    const stored = harness.receiver.getStoredResource("opaque source");
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () => putContent(harness, "concurrent-001", minimalContent())),
+    );
+    expect(results.filter((result) => result.status === 201)).toHaveLength(1);
+    expect(results.filter((result) => result.status === 200)).toHaveLength(19);
+    expect(results.every((result) => validate(schemaFile.contentSuccess, result.body))).toBe(true);
+    expect(harness.receiver.getResourceCount()).toBe(1);
+  });
+
+  it("accepts a wire-safe source_id and persists omitted status as draft", async () => {
+    const harness = await startReceiver();
+    const result = await putContent(harness, "opaque-source~001", minimalContent());
+    const stored = harness.receiver.getStoredResource("opaque-source~001");
 
     expect(result.status).toBe(201);
     expect(stored?.body.status).toBe("draft");
     expect(harness.receiver.getResourceCount()).toBe(1);
   });
+
+  it.each([".", "..", "a/b", "a\\\\b", "a%b", "a b", "é", "a".repeat(129)])(
+    "rejects invalid source_id wire value %s",
+    async (sourceId) => {
+      const harness = await startReceiver();
+      const result = await request(
+        harness,
+        "/v1/content/" + encodeURIComponent(sourceId),
+        "PUT",
+        minimalContent(),
+        authHeaders(),
+      );
+      expect([400, 404]).toContain(result.status);
+      expect(problemCode(result)).toBe("invalid_request");
+      expect(harness.receiver.getResourceCount()).toBe(0);
+    },
+  );
 
   it("rejects an empty source_id instead of creating an ambiguous resource", async () => {
     const harness = await startReceiver();

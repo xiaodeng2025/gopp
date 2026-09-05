@@ -288,7 +288,7 @@ describe("GOPP v1 Publisher Client", () => {
     ).resolves.toMatchObject({ result: "created" });
   });
 
-  it("URL-encodes source_id and joins a Receiver base path", async () => {
+  it("encodes a valid source_id and joins a Receiver base path", async () => {
     let receivedPath = "";
     const target = await startServer((request, response) => {
       receivedPath = request.url ?? "";
@@ -298,7 +298,7 @@ describe("GOPP v1 Publisher Client", () => {
       }
       if (
         request.method === "PUT" &&
-        request.url === "/receiver/v1/content/article%20a%2Fb%3F%E6%B5%8B%E8%AF%95"
+        request.url === "/receiver/v1/content/article-001"
       ) {
         sendJson(response, 201, contentResponse());
         return;
@@ -307,11 +307,11 @@ describe("GOPP v1 Publisher Client", () => {
     });
 
     await client(target.baseUrl + "/receiver/").putContent(
-      "article a/b?测试",
+      "article-001",
       content,
     );
     expect(receivedPath).toBe(
-      "/receiver/v1/content/article%20a%2Fb%3F%E6%B5%8B%E8%AF%95",
+      "/receiver/v1/content/article-001",
     );
   });
 

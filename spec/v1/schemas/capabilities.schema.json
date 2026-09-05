@@ -60,9 +60,9 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "minLength": 1
+        "pattern": "^(https://|[a-z][a-z0-9+.-]*\\.)"
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

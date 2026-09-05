@@ -141,6 +141,17 @@ describe("GOPP Publisher transport security", () => {
     );
   });
 
+  it("does not let the legacy private-network option broaden egress", () => {
+    assertSecurityError(
+      () => new GoppClient({
+        baseUrl: "https://127.0.0.1",
+        token,
+        transportSecurity: { allowPrivateNetwork: true },
+      }),
+      "blocked_target",
+    );
+  });
+
   it("does not follow redirects or transfer the bearer token", async () => {
     let redirectedRequests = 0;
     let redirectedAuthorization: string | undefined;

@@ -20,7 +20,7 @@
               "$ref": "https://gopp.example/schemas/v1/capabilities.schema.json"
             }
           },
-          "additionalProperties": false
+          "additionalProperties": true
         }
       }
     }

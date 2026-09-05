@@ -28,6 +28,7 @@ const projectRoot = path.resolve(
   "../../../",
 );
 const schemaDirectory = path.join(projectRoot, "spec", "v1", "schemas");
+const sourceIdPattern = /^(?!\.\.?$)[A-Za-z0-9._~-]{1,128}$/;
 
 export type ProtocolStatus = "draft" | "published";
 
@@ -649,11 +650,11 @@ export class ReferenceReceiver {
         "source_id is not valid URI-encoded text.",
       );
     }
-    if (!sourceId || /[\u0000-\u001f\u007f\r\n]/.test(sourceId)) {
+    if (!sourceIdPattern.test(sourceId)) {
       throw new ReceiverError(
         400,
         "invalid_request",
-        "source_id is empty or contains invalid control characters.",
+        "source_id does not satisfy the GOPP wire grammar.",
       );
     }
     return sourceId;
