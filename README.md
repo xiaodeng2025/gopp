@@ -24,3 +24,5 @@ GOPP（GEO Open Publish Protocol）是行业无关、后台无关、CMS 无关�
 - `docs/` — implementation guidance
 
 SQLite, health endpoints, browser display pages, and sample channel names are examples only, not protocol requirements.
+
+Python client installation for local development is documented in `publisher/python/pyproject.toml`; it has no dependency on the private V5 integration archive.
