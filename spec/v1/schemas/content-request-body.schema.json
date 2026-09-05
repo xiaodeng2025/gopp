@@ -8,6 +8,7 @@
     "content"
   ],
   "properties": {
+    "source_id": false,
     "title": {
       "type": "string",
       "minLength": 1
@@ -128,9 +129,6 @@
     }
   },
   "additionalProperties": true,
-  "not": {
-    "required": ["source_id"]
-  },
   "$defs": {
     "http_url": {
       "type": "string",
