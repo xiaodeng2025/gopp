@@ -140,11 +140,11 @@ class GoppClient:
             capabilities["upsert"] is not True
             or not isinstance(capabilities["content_formats"], list) or "html" not in capabilities["content_formats"]
             or not isinstance(capabilities["statuses"], list) or "draft" not in capabilities["statuses"]
-            or any(value not in {"draft", "published"} for value in capabilities["statuses"])
+            or any(not isinstance(value, str) or value not in {"draft", "published"} for value in capabilities["statuses"])
             or any(not isinstance(value, str) for value in capabilities["content_formats"])
             or any(not isinstance(capabilities[field], bool) for field in ("channels", "tags", "seo", "media", "revision"))
             or not isinstance(capabilities["extensions"], list)
-            or any(not isinstance(value, str) or EXTENSION_NAMESPACE_PATTERN.fullmatch(value) is None for value in capabilities["extensions"])
+            or any(not isinstance(value, str) or EXTENSION_NAMESPACE_PATTERN.match(value) is None for value in capabilities["extensions"])
         ):
             raise GoppProtocolError("GOPP verify capabilities are invalid.")
         self._verified = data

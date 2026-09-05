@@ -84,6 +84,31 @@ class PythonClientTests(unittest.TestCase):
             with self.assertRaises(GoppAuthenticationError):
                 GoppClient("https://receiver.example.invalid", "test-token").verify()
 
+    def test_verify_accepts_canonical_extension_namespace_values(self):
+        response = httpx.Response(200, json={"protocol": "GOPP", "protocol_version": "1.0", "request_id": "r1", "data": {"site": {}, "capabilities": {"content_formats": ["html"], "statuses": ["draft"], "upsert": True, "channels": False, "tags": False, "seo": False, "media": False, "revision": False, "extensions": ["com.example.content-policy", "cn.example.feature", "https://example.com/namespace"]}}})
+
+        class FakeClient:
+            def __init__(self, **_kwargs): pass
+            def __enter__(self): return self
+            def __exit__(self, *_): return False
+            def request(self, *_args, **_kwargs): return response
+
+        with patch.object(GoppClient, "_check_target"), patch("gopp.client.httpx.Client", FakeClient):
+            self.assertEqual(GoppClient("https://receiver.example.invalid", "test-token").verify()["protocol"], "GOPP")
+
+    def test_verify_rejects_non_string_status_without_type_error(self):
+        response = httpx.Response(200, json={"protocol": "GOPP", "protocol_version": "1.0", "request_id": "r1", "data": {"site": {}, "capabilities": {"content_formats": ["html"], "statuses": ["draft", []], "upsert": True, "channels": False, "tags": False, "seo": False, "media": False, "revision": False, "extensions": []}}})
+
+        class FakeClient:
+            def __init__(self, **_kwargs): pass
+            def __enter__(self): return self
+            def __exit__(self, *_): return False
+            def request(self, *_args, **_kwargs): return response
+
+        with patch.object(GoppClient, "_check_target"), patch("gopp.client.httpx.Client", FakeClient):
+            with self.assertRaises(GoppProtocolError):
+                GoppClient("https://receiver.example.invalid", "test-token").verify()
+
 
 if __name__ == "__main__":
     unittest.main()
