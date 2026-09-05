@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gopp.example/schemas/v1/verify-success.schema.json",
+  "title": "GOPP v1 verify success response",
+  "allOf": [
+    {
+      "$ref": "https://gopp.example/schemas/v1/common-success-response.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": ["site", "capabilities"],
+          "properties": {
+            "site": {
+              "$ref": "https://gopp.example/schemas/v1/site.schema.json"
+            },
+            "capabilities": {
+              "$ref": "https://gopp.example/schemas/v1/capabilities.schema.json"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

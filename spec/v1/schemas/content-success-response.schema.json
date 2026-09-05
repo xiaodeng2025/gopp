@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gopp.example/schemas/v1/content-success-response.schema.json",
+  "title": "GOPP v1 Content Success Response",
+  "allOf": [
+    {
+      "$ref": "https://gopp.example/schemas/v1/common-success-response.schema.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": [
+            "result"
+          ],
+          "properties": {
+            "result": {
+              "enum": [
+                "created",
+                "updated",
+                "unchanged"
+              ]
+            },
+            "remote_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "remote_url": {
+              "type": "string",
+              "pattern": "^https?://[^\\s]+$"
+            },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "code"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "field": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "title": "企业服务方案选择指南",
+  "content": {
+    "format": "html",
+    "body": "<p>帮助企业理解服务方案的选择维度。</p><h2>选择方法</h2><p>从目标、范围和交付方式进行评估。</p>"
+  },
+  "content_type": "article",
+  "summary": "一段面向读者的摘要。",
+  "media": {
+    "cover": {
+      "url": "https://cdn.example.com/content/cover.jpg",
+      "alt": "企业服务场景",
+      "caption": "企业服务场景"
+    },
+    "images": [
+      {
+        "url": "https://cdn.example.com/content/step-1.jpg",
+        "alt": "操作步骤示意"
+      }
+    ]
+  },
+  "channel": {
+    "id": "technical",
+    "name": "技术文章"
+  },
+  "tags": [
+    "企业服务",
+    "方法论"
+  ],
+  "author": {
+    "name": "示例作者",
+    "url": "https://www.example.com/authors/example"
+  },
+  "seo": {
+    "title": "企业服务方案选择指南",
+    "description": "帮助企业理解服务方案的选择维度。",
+    "keywords": [
+      "企业服务",
+      "服务方案"
+    ]
+  },
+  "source_url": "https://publisher.example.com/content/opaque-content-001",
+  "locale": "zh-CN",
+  "published_at": "2026-09-04T03:00:00Z",
+  "status": "published",
+  "revision": 3,
+  "extensions": {
+    "com.example.content-policy": {
+      "version": "1"
+    }
+  }
+}

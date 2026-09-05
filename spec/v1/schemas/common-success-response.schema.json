@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gopp.example/schemas/v1/common-success-response.schema.json",
+  "title": "GOPP v1 common success response",
+  "type": "object",
+  "required": ["protocol", "protocol_version", "request_id", "data"],
+  "properties": {
+    "protocol": {
+      "const": "GOPP"
+    },
+    "protocol_version": {
+      "const": "1.0"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gopp.example/schemas/v1/channel-item.schema.json",
+  "title": "GOPP v1 channel item",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}

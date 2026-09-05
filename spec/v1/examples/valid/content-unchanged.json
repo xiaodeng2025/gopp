@@ -1,0 +1,9 @@
+{
+  "protocol": "GOPP",
+  "protocol_version": "1.0",
+  "request_id": "req_01JCONTENTUNCHANGED",
+  "data": {
+    "result": "unchanged",
+    "remote_id": "123"
+  }
+}

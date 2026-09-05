@@ -1,0 +1,29 @@
+{
+  "protocol": "GOPP",
+  "protocol_version": "1.0",
+  "request_id": "req_01JVERIFY",
+  "data": {
+    "site": {
+      "name": "示例企业官网",
+      "url": "https://www.example.com",
+      "locale": "zh-CN",
+      "timezone": "Asia/Shanghai"
+    },
+    "capabilities": {
+      "content_formats": [
+        "html"
+      ],
+      "statuses": [
+        "draft",
+        "published"
+      ],
+      "upsert": true,
+      "channels": true,
+      "tags": true,
+      "seo": true,
+      "media": true,
+      "revision": true,
+      "extensions": []
+    }
+  }
+}

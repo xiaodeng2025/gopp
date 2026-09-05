@@ -1,0 +1,19 @@
+{
+  "protocol": "GOPP",
+  "protocol_version": "1.0",
+  "request_id": "req_01JCHANNELS",
+  "data": {
+    "channels": [
+      {
+        "id": "news",
+        "name": "新闻中心",
+        "parent_id": null
+      },
+      {
+        "id": "technical",
+        "name": "技术文章",
+        "parent_id": "news"
+      }
+    ]
+  }
+}

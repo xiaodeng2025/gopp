@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gopp.example/schemas/v1/problem-details.schema.json",
+  "title": "GOPP v1 Problem Details",
+  "type": "object",
+  "required": [
+    "type",
+    "title",
+    "status",
+    "code",
+    "request_id",
+    "retryable"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "integer",
+      "minimum": 400,
+      "maximum": 599
+    },
+    "detail": {
+      "type": "string"
+    },
+    "instance": {
+      "type": "string",
+      "minLength": 1
+    },
+    "code": {
+      "enum": [
+        "authentication_failed",
+        "unsupported_protocol_version",
+        "invalid_request",
+        "invalid_content",
+        "unsupported_content_format",
+        "channel_not_found",
+        "resource_conflict",
+        "rate_limited",
+        "internal_error"
+      ]
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "field_errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "reason"
+        ],
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {}
+        },
+        "additionalProperties": false
+      }
+    },
+    "retryable": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

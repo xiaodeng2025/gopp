@@ -1,0 +1,16 @@
+{
+  "protocol": "GOPP",
+  "protocol_version": "1.0",
+  "request_id": "req_01JMEDIA",
+  "data": {
+    "result": "created",
+    "remote_id": "123",
+    "warnings": [
+      {
+        "code": "media_fetch_failed",
+        "field": "media.cover.url",
+        "message": "The optional cover image could not be fetched."
+      }
+    ]
+  }
+}

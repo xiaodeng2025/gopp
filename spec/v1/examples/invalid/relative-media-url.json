@@ -1,0 +1,12 @@
+{
+  "title": "相对图片 URL",
+  "content": {
+    "format": "html",
+    "body": "<p>正文。</p>"
+  },
+  "media": {
+    "cover": {
+      "url": "/images/cover.jpg"
+    }
+  }
+}

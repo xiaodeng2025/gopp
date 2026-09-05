@@ -1,0 +1,16 @@
+{
+  "type": "about:blank",
+  "title": "Invalid content",
+  "status": 422,
+  "detail": "content.title is required.",
+  "instance": "urn:request:req_01JERROR",
+  "code": "invalid_content",
+  "request_id": "req_01JERROR",
+  "field_errors": [
+    {
+      "field": "title",
+      "reason": "required"
+    }
+  ],
+  "retryable": false
+}

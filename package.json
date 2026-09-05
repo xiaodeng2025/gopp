@@ -1,0 +1,23 @@
+{
+  "name": "gopp-integration-kit",
+  "version": "0.1.0-rc.1",
+  "private": true,
+  "description": "GOPP v1 Integration Kit — Release Candidate Preparation",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "conformance": "tsx conformance/src/conformance-cli.ts",
+    "receiver": "tsx examples/persistent-receiver/persistent-test-receiver.ts",
+    "basic-example": "tsx examples/basic-publisher/basic-publisher.ts"
+  },
+  "dependencies": { "ajv": "^8.17.1", "ajv-formats": "^3.0.1" },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

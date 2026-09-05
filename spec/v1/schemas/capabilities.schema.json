@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gopp.example/schemas/v1/capabilities.schema.json",
+  "title": "GOPP v1 capabilities",
+  "type": "object",
+  "required": [
+    "content_formats",
+    "statuses",
+    "upsert",
+    "channels",
+    "tags",
+    "seo",
+    "media",
+    "revision",
+    "extensions"
+  ],
+  "properties": {
+    "content_formats": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "contains": {
+        "const": "html"
+      },
+      "items": {
+        "const": "html"
+      }
+    },
+    "statuses": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "contains": {
+        "const": "draft"
+      },
+      "items": {
+        "enum": ["draft", "published"]
+      }
+    },
+    "upsert": {
+      "const": true
+    },
+    "channels": {
+      "type": "boolean"
+    },
+    "tags": {
+      "type": "boolean"
+    },
+    "seo": {
+      "type": "boolean"
+    },
+    "media": {
+      "type": "boolean"
+    },
+    "revision": {
+      "type": "boolean"
+    },
+    "extensions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "additionalProperties": false
+}

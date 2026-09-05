@@ -1,0 +1,11 @@
+{
+  "protocol": "GOPP",
+  "protocol_version": "1.0",
+  "request_id": "req_01JCONTENTCREATED",
+  "data": {
+    "result": "created",
+    "remote_id": "123",
+    "remote_url": "https://example.com/articles/123",
+    "warnings": []
+  }
+}

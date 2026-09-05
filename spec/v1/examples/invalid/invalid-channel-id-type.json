@@ -1,0 +1,10 @@
+{
+  "title": "栏目 ID 类型错误",
+  "content": {
+    "format": "html",
+    "body": "<p>正文。</p>"
+  },
+  "channel": {
+    "id": 123
+  }
+}

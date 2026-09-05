@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gopp-publisher"
+version = "0.1.0rc1"
+description = "GOPP v1 Publisher client"
+requires-python = ">=3.10"
+dependencies = ["httpx>=0.27,<1"]
+
+[tool.setuptools.packages.find]
+where = ["."]
