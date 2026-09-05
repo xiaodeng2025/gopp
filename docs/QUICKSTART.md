@@ -10,4 +10,4 @@
 
 ## Conformance
 
-`npm run conformance -- --url https://receiver.example.invalid --token <inject-at-runtime>` 运行兼容性测试；实际使用时通过 secret manager 或受保护的进程环境注入 credential。
+设置进程环境变量 `GOPP_TOKEN` 后运行 `npm run conformance -- --url https://receiver.example.invalid`；实际使用时通过 secret manager 或受保护的进程环境注入 credential，不要把 credential 放在命令参数中。
